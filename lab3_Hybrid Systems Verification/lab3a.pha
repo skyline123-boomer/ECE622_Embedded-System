@@ -1,0 +1,67 @@
+// ----------------------------------------------------------
+// Hybrid System Example: Phaver model of sys1 T.A. from HW2 
+// ----------------------------------------------------------
+
+// ----------------------------------------------------------
+// System Description
+// ----------------------------------------------------------
+automaton example
+
+        contr_var: x,y; //the two variables of the automaton
+        synclabs: a;    //don't need to change this, "a" is a label for transitions
+
+        // ---------------------------------
+        // This comment block explains everything about the first two lines after the comment
+        // 
+        // loc locA: while x<=2 & y<=2 wait {x' == 1 & y' == 1}
+        //   ...first location is named locA
+        //   ...x<=2 & y<=2 is the location invariant
+        //   ...while waiting in this state, derivative of x and y are both 1.
+        //	
+        //   when x>= 1 sync a do{x'==0 & y'==0} goto locA;
+        //     ...first transition from locA has guard condition x>=1
+        //     ...if that transition occurs, x and y are both set to 0
+        //     ...(note: x' and y' on the jump refer to updates, not derivatives)
+        //     ...if that transition occurs, the system goes back to locA
+        // ---------------------------------
+		
+        loc locA: while x<=2 & y<=2 wait {x' == 1 & y' == 1}
+              when x>= 1 sync a do{x'==0 & y'==0} goto locA;
+              when x < 1 sync a do{x'==x & y'==y} goto locB;
+        loc locB: while x<=2 & y<=2 wait {x' == 1 & y' == 1};
+              when x>=1 sync a do {x'==0 & y'==y} goto locB;
+              when y>0  sync a do {x'==x & y'==y} goto locA;
+
+        // initial condition is location locA with x and y both at 0
+        initially: locA & x == 0 & y == 0;
+end
+
+// ----------------------------------------------------------
+// Define Partitioning
+// ----------------------------------------------------------
+// Add a new label for the transitions that are introduced between partitions. Don't need to change this.
+example.add_label(tau);
+
+// controls how the size of the partitions (i.e. the level of abstraction). 
+pc:=0.2;
+
+// set up partitioning of state space for the two variables x and y
+example.set_refine_constraints((x,pc),(y,pc),tau);
+
+
+
+// ----------------------------------------------------------
+// Saving Data for Graphical Output
+// ----------------------------------------------------------
+reg=example.reachable;      // all of the reachable parts of the state space of example
+reg.print("out_example",2); // output as a list of vertices
+
+
+// ----------------------------------------------------------
+// Analysis Commands
+// ----------------------------------------------------------
+cond1=example.{locA & x==1 & y==2}; 
+check1=example.is_reachable(cond1); //can we reach locA with x==1 and y==2?
+
+cond2=example.{locA & x==2 & y==1};
+check2=example.is_reachable(cond2); //can we reach locA with x==2 and y==1?
